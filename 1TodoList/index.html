@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>项目一 TodoList</title>
+    <style>
+        body {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%)
+        }
+        .done {
+            color: aqua;
+            text-decoration: line-through
+        }
+
+        input:focus {
+            outline: 0;
+            border: 1px solid #f95d5d;
+            box-shadow: 0px 0px 10px 0px #f95d5d;
+        }
+
+        button {
+            background: lightblue repeat 0px 0px;
+            width: 43px;
+            height: 22px;
+        }
+
+        button span {
+            display: none;
+        }
+
+        button:hover {
+            background: blueviolet repeat 0px -44px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>TodoList</h1>
+    <img src="/images/1.jpg">
+    <div id="id-div-todo-container">
+        <input type="text" id="id-todo-input">
+        <button type="button" id="id-todo-submit">提交</button>
+    </div>
+    <script src="/js/lmx.js"></script>
+    <script>
+        var templateTodo = (todo, done) => {
+            var t =
+                `
+                    <div class="todo-list ${done}" data-id="${todo.id}">
+                    <button type="button" class="todo-delete">删除</button>
+                    <button type="button" class="todo-done">完成</button>
+                    <span>${todo.task}</span>
+                    </div>
+                `
+            return t
+        }
+        var showTodo = (todo) => {
+            for (var i of todo) {
+                showTodoSingle(i)
+            }
+        }
+        var showDone = (todoObject) => {
+            if (todoObject.done === true) {
+                var t = templateTodo(todoObject, 'done')
+            } else {
+                var t = templateTodo(todoObject)
+            }
+            return t
+        }
+        var showTodoSingle = (todoObject) => {
+            var container = e('#id-div-todo-container')
+            log('task', todoObject.task)
+            var t = showDone(todoObject)
+            addHtml(container, t)
+        }
+
+        var apiTodoAll = (callback) => {
+            var method = 'GET'
+            var path = '/todo/all'
+            var data = ''
+            ajax(method, path, data, callback)
+        }
+
+        var apiTodoAdd = (callback) => {
+            var method = 'POST'
+            var path = '/todo/add'
+            var input = e('#id-todo-input')
+            var submit = e('#id-todo-submit')
+            submit.addEventListener('click', (event) => {
+                var task = input.value
+                log('task', task)
+                var data = {
+                    task: task,
+                }
+                ajax(method, path, data, callback)
+
+            })
+
+        }
+        var apiTodoDone = (callback) => {
+            var method = "POST"
+            var container = e('#id-div-todo-container')
+            container.addEventListener('click', (event) => {
+                var self = event.target
+                if (self.classList.contains('todo-done')) {
+                    var element = self.closest('.todo-list')
+                    var id = Number(element.dataset.id)
+                    var path = '/todo/done/' + id
+                    log('id', id, path)
+                    element.classList.toggle('done')
+                    if (element.classList.contains('done')) {
+                        var data = {
+                            done: true,
+                        }
+                        ajax(method, path, data, callback)
+                    } else {
+                        var data = {
+                            done: false,
+                        }
+                        ajax(method, path, data, callback)
+                    }
+                }
+            })
+        }
+        var apiTodoDelete = (callback) => {
+            var method = 'GET'
+            var container = e('#id-div-todo-container')
+            container.addEventListener('click', (event) => {
+                var self = event.target
+                if (self.classList.contains('todo-delete')) {
+                    var element = self.closest('.todo-list')
+                    var id = Number(element.dataset.id)
+                    element.remove()
+                    var path = '/todo/delete/' + id
+                    var data = {}
+                    ajax(method, path, data, callback)
+                }
+            })
+        }
+
+
+        var __main = () => {
+            apiTodoAll((d5) => {
+                var todo = JSON.parse(d5)
+                showTodo(todo)
+            })
+            apiTodoAdd((r) => {
+                var todo = JSON.parse(r)
+                log('add sucess', todo)
+                showTodoSingle(todo)
+            })
+            apiTodoDelete((r) => {
+                var todo = JSON.parse(r)
+                log('删除成功', todo)
+            })
+            apiTodoDone((r) => {
+                var todo = JSON.parse(r)
+                log('done', todo)
+            })
+        }
+
+        __main()
+    </script>
+</body>
+
+</html>
